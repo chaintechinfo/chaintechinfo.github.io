@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh-CN">
     <title type="text">Shaohan.Niu&#39;s Tech Blog</title>
     <subtitle type="html">MemE 是一个强大且可高度定制的 GoHugo 博客主题，专为个人博客设计。</subtitle>
-    <updated>2020-11-24T22:48:13&#43;08:00</updated>
+    <updated>2020-11-24T23:02:36&#43;08:00</updated>
     <id>https://chaintechinfo.github.io/</id>
     <link rel="alternate" type="text/html" href="https://chaintechinfo.github.io/" />
     <link rel="self" type="application/atom&#43;xml" href="https://chaintechinfo.github.io/atom.xml" />
@@ -20,14 +20,14 @@
             <title type="text">Kubernetes Best Practices: Mapping External Services</title>
             <link rel="alternate" type="text/html" href="https://chaintechinfo.github.io/posts/cloud-native/kubernetes/kubernetes-best-practices-mapping-external-services/" />
             <id>https://chaintechinfo.github.io/posts/cloud-native/kubernetes/kubernetes-best-practices-mapping-external-services/</id>
-            <updated>2020-11-24T17:33:16&#43;08:00</updated>
+            <updated>2020-11-24T21:44:53&#43;08:00</updated>
             <published>2020-11-24T16:44:14&#43;08:00</published>
             <author>
                     <name>shaohan.niu</name>
                     <uri>https://chaintechinfo.github.io/</uri>
                     <email>shaohan.niu.share@gmail.com</email>
                     </author>
-            <rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</rights><summary type="html">在使用 Kubernetes 集群时，我们有访问外部服务的需要，比如一些公共的 API 服务，或者是自己自建的一些……</summary>
+            <rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</rights><summary type="html">在使用 Kubernetes 集群时，我们有访问外部服务的需要，比如一些公共的 API 服务，或者是自己自建的一些数据存储服务等。 如果在不同环境中的应用程序连接到相同的外部 Endpoint，并且没有计划将外部服务引入 Kubernetes 集群，那么直接在代码中使用外部服务 Endpoint 是完全可以的。但……</summary>
             
                 <content type="html">&lt;p&gt;在使用 Kubernetes 集群时，我们有访问外部服务的需要，比如一些公共的 API 服务，或者是自己自建的一些数据存储服务等。&lt;/p&gt;
 &lt;p&gt;如果在不同环境中的应用程序连接到相同的外部 Endpoint，并且没有计划将外部服务引入 Kubernetes 集群，那么直接在代码中使用外部服务 Endpoint 是完全可以的。但是，有些情况是例外的，比如某些 Cloud Native 的数据库（例如 Cloud Firestore 或 Cloud Spanner）使用单个端点进行所有访问，但大多数数据库对于不同实例具有单独的端点。&lt;/p&gt;
@@ -189,14 +189,14 @@ mongodb://&amp;lt;dbuser&amp;gt;:&amp;lt;dbpassword&amp;gt;@ds145868.mlab.com:45
             <title type="text">Guava EventBus</title>
             <link rel="alternate" type="text/html" href="https://chaintechinfo.github.io/posts/sourcecode/guava/guava-eventbus/" />
             <id>https://chaintechinfo.github.io/posts/sourcecode/guava/guava-eventbus/</id>
-            <updated>2020-11-20T10:24:14&#43;08:00</updated>
+            <updated>2020-11-24T21:44:53&#43;08:00</updated>
             <published>2020-11-16T17:52:08&#43;08:00</published>
             <author>
                     <name>shaohan.niu</name>
                     <uri>https://chaintechinfo.github.io/</uri>
                     <email>shaohan.niu.share@gmail.com</email>
                     </author>
-            <rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</rights><summary type="html">Guava EventBus 允许组件之间的发布-订阅式通信，而无需组件之间显式注册。 适用场景：进程内通信，不……</summary>
+            <rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</rights><summary type="html">Guava EventBus 允许组件之间的发布-订阅式通信，而无需组件之间显式注册。 适用场景：进程内通信，不支持进程间，不是一个通用的发布订阅系统，使用显式注册代替传统的 Java 进程内事件分发，传统的事件分发需要定义 Listener、注册每个事件监听到列表中等 使用 EventBus 感受……</summary>
             
                 <content type="html">&lt;p&gt;Guava EventBus 允许组件之间的发布-订阅式通信，而无需组件之间显式注册。&lt;/p&gt;
 &lt;p&gt;适用场景：进程内通信，不支持进程间，不是一个通用的发布订阅系统，使用显式注册代替传统的 Java 进程内事件分发，传统的事件分发需要定义 Listener、注册每个事件监听到列表中等&lt;/p&gt;
