@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="zh-CN">
     <title type="text">Shaohan.Niu&#39;s Tech Blog</title>
     <subtitle type="html">MemE 是一个强大且可高度定制的 GoHugo 博客主题，专为个人博客设计。</subtitle>
-    <updated>2020-12-07T10:01:04&#43;08:00</updated>
+    <updated>2021-01-01T14:43:22&#43;08:00</updated>
     <id>https://chaintechinfo.github.io/</id>
     <link rel="alternate" type="text/html" href="https://chaintechinfo.github.io/" />
     <link rel="self" type="application/atom&#43;xml" href="https://chaintechinfo.github.io/atom.xml" />
@@ -16,6 +16,98 @@
             </author>
     <rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</rights>
     <generator uri="https://gohugo.io/" version="0.78.2">Hugo</generator>
+        <entry>
+            <title type="text">[译] 在 Redis 中存储数亿个简单键值对</title>
+            <link rel="alternate" type="text/html" href="https://chaintechinfo.github.io/posts/system-design/middleware/redis/translate-storing-hundreds-of-millions-simple-kv/" />
+            <id>https://chaintechinfo.github.io/posts/system-design/middleware/redis/translate-storing-hundreds-of-millions-simple-kv/</id>
+            <updated>2021-01-01T14:43:03&#43;08:00</updated>
+            <published>2020-12-08T22:40:04&#43;08:00</published>
+            <author>
+                    <name>shaohan.niu</name>
+                    <uri>https://chaintechinfo.github.io/</uri>
+                    <email>shaohan.niu.share@gmail.com</email>
+                    </author>
+            <rights>[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh)</rights><summary type="html">在 Instagram, 出于遗留原因，需要将大约 3 亿张照片映射回创建它们的用户 ID，以便知道要查询哪个分片; 最终所有客户端和 API 应用程序都将进行更新以将全部信息传递给我们，但是仍然有很多客户端和 API 应用缓存了旧信息。需要找到一种解决方案： 支持检索 key 并能迅速的返回 尽……</summary>
+            
+                <content type="html">&lt;p&gt;在 Instagram, 出于遗留原因，需要将大约 3 亿张照片映射回创建它们的用户 ID，以便知道要查询哪个分片; 最终所有客户端和 API 应用程序都将进行更新以将全部信息传递给我们，但是仍然有很多客户端和 API 应用缓存了旧信息。需要找到一种解决方案：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;支持检索 key 并能迅速的返回&lt;/li&gt;
+&lt;li&gt;尽可能的少占用内存&lt;/li&gt;
+&lt;li&gt;非常适合现有的基础架构设施&lt;/li&gt;
+&lt;li&gt;支持持久化，这样，如果服务器死机，我们就不必重新填充和初始化&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;解决此问题的一种简单解决方案是将它们简单地存储为数据库中的多个行，每一行都有 &amp;quot;Media ID&amp;quot; 和 &amp;quot;User ID&amp;quot; 两列。但是，这些 ID 不会更新（仅插入），不需要进行事务处理且与其他表没有任何关系，因此 SQL 数据库似乎有些太重了。&lt;/p&gt;
+&lt;p&gt;使用 Redis 也可以轻松的解决这个问题，并且在 Instagram 中 Redis 也被广泛使用。最开始的方案是为每个 Media ID 映射一个 User ID，如下:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;SET media:1155315 &lt;span class=&#34;m&#34;&gt;939&lt;/span&gt;
+GET media:1155315
+&amp;gt; &lt;span class=&#34;m&#34;&gt;939&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;然而使用这种方案，我们发现 Redis 需要使用 70MB 的内存空间去存储 100 万数据，以此推测，存储 3 亿数据需要大约 21GB 的内存空间；明显这个空间对于单个 Redis 实例是有些大的，是否有更节省内存空间的办法呢？&lt;/p&gt;
+&lt;p&gt;Redis 有 Hash 数据结构，它可以很好的解决这个问题，具体做法是将 3 亿数据按照 Media ID 分成 1000 个桶，桶的计算方式是 &lt;code&gt;Media ID / 1000&lt;/code&gt; 这种除法的计算方式，然后对每个桶的数据使用 Hash 数据结构进行存储，如下：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;div class=&#34;chroma&#34;&gt;
+&lt;table class=&#34;lntable&#34;&gt;&lt;tr&gt;&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code&gt;&lt;span class=&#34;lnt&#34;&gt;1
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;2
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;3
+&lt;/span&gt;&lt;span class=&#34;lnt&#34;&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class=&#34;lntd&#34;&gt;
+&lt;pre class=&#34;chroma&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span class=&#34;c1&#34;&gt;# 1155315 / 1000 = 1155&lt;/span&gt;
+HSET &lt;span class=&#34;s2&#34;&gt;&amp;#34;mediabucket:1155&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;1155315&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;939&amp;#34;&lt;/span&gt;
+HGET &lt;span class=&#34;s2&#34;&gt;&amp;#34;mediabucket:1155&amp;#34;&lt;/span&gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;1155315&amp;#34;&lt;/span&gt;
+&amp;gt; &lt;span class=&#34;s2&#34;&gt;&amp;#34;939&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;其中，&lt;code&gt;mediabucket:1155&lt;/code&gt; 是 Hash 的 key, &lt;code&gt;1155315&lt;/code&gt; 是 field, 表示 Media ID，&lt;code&gt;939&lt;/code&gt; 是 value, 表示 User ID；使用这种方式后，总共需要的内存是大约 5GB。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;额外的思考：&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;为什么两种方案占用的内存空间差异这么大呢？第一种方案是使用 String 数据结构直接存储；第二种方案是使用 Bucket + Hash 数据结构&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;via: &lt;a href=&#34;https://instagram-engineering.com/storing-hundreds-of-millions-of-simple-key-value-pairs-in-redis-1091ae80f74c&#34;&gt;Storing hundreds of millions of simple key-value pairs in Redis&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Translate: shaohan.niu&lt;/p&gt;
+</content>
+            
+            
+            
+            
+            
+                
+                    
+                        
+                            
+                            
+                            
+                                <category scheme="https://chaintechinfo.github.io/categories/middleware/" term="Middleware" label="Middleware" />
+                            
+                        
+                            
+                            
+                            
+                                <category scheme="https://chaintechinfo.github.io/categories/redis/" term="Redis" label="Redis" />
+                            
+                        
+                    
+                
+                    
+                        
+                            
+                            
+                            
+                                <category scheme="https://chaintechinfo.github.io/tags/redis/" term="Redis" label="Redis" />
+                            
+                        
+                    
+                
+            
+        </entry>
+    
         <entry>
             <title type="text">Kubernetes Best Practices: Mapping External Services</title>
             <link rel="alternate" type="text/html" href="https://chaintechinfo.github.io/posts/cloud-native/kubernetes/kubernetes-best-practices-mapping-external-services/" />
